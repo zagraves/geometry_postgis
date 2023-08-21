@@ -181,7 +181,7 @@ defmodule Strabo.Ecto.Test do
       Ecto.Changeset.cast(result, %{title: "Hello", geom: json}, [:name, :geom])
       |> Ecto.Changeset.validate_required([:name, :geom])
 
-    assert changeset.changes == %{geom: %Geometry.Point{coordinate: [31, -90]}}
+    assert changeset.changes == %{geom: {%Geometry.Point{coordinate: [31, -90]}, 4326}}
   end
 
   test "cast point from map" do
@@ -195,7 +195,6 @@ defmodule Strabo.Ecto.Test do
 
     json = %{
       "type" => "Point",
-      "crs" => %{"type" => "name", "properties" => %{"name" => "EPSG:4326"}},
       "coordinates" => [31, -90]
     }
 
@@ -203,7 +202,7 @@ defmodule Strabo.Ecto.Test do
       Ecto.Changeset.cast(result, %{title: "Hello", geom: json}, [:name, :geom])
       |> Ecto.Changeset.validate_required([:name, :geom])
 
-    assert changeset.changes == %{geom: %Geometry.Point{coordinate: [31, -90]}}
+    assert changeset.changes == %{geom: {%Geometry.Point{coordinate: [31, -90]}, 4326}}
   end
 
   test "order by distance" do

@@ -99,10 +99,10 @@ if Code.ensure_loaded?(Ecto.Type) do
     def cast({%struct{} = geom, srid}) when struct in @geometries, do: {:ok, {geom, srid}}
 
     def cast(%{"type" => "Feature", "geometry" => _} = geojson),
-      do: {:ok, GeoJson.decode!(geojson, :auto)}
+      do: {:ok, {GeoJson.decode!(geojson, :auto), 4326}}
 
     def cast(%{"type" => type, "coordinates" => _} = geojson) when type in @types,
-      do: {:ok, GeoJson.decode!(geojson, :auto)}
+      do: {:ok, {GeoJson.decode!(geojson, :auto), 4326}}
 
     def cast(_), do: :error
 
