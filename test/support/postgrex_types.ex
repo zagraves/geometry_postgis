@@ -1,5 +1,5 @@
 Postgrex.Types.define(
-  Geo.PostGIS.PostgrexTypes,
-  [Geo.PostGIS.Extension],
+  Strabo.PostgrexTypes,
+  [Strabo.Extension],
   decode_binary: :reference
 )

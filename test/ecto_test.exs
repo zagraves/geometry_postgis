@@ -1,9 +1,11 @@
-defmodule Geo.Ecto.Test do
+defmodule Strabo.Ecto.Test do
   use ExUnit.Case, async: true
   use Ecto.Migration
+
   import Ecto.Query
-  import Geo.PostGIS
-  alias Geo.PostGIS.Test.Repo
+  import Strabo
+
+  alias Strabo.Test.Repo
 
   @multipoint_wkb "0106000020E6100000010000000103000000010000000F00000091A1EF7505D521C0F4AD6182E481424072B3CE92FED421C01D483CDAE281424085184FAEF7D421C0CB159111E1814240E1EBD7FBF8D421C0D421F7C8DF814240AD111315FFD421C0FE1F21C0DE81424082A0669908D521C050071118DE814240813C5E700FD521C0954EEF97DE814240DC889FA815D521C0B3382182E08142400148A81817D521C0E620D22BE2814240F1E95BDE19D521C08BD53852E3814240F81699E217D521C05B35D7DCE4814240B287C8D715D521C0336338FEE481424085882FB90FD521C0FEF65484E5814240A53E1E460AD521C09A0EA286E581424091A1EF7505D521C0F4AD6182E4814240"
 
@@ -12,7 +14,7 @@ defmodule Geo.Ecto.Test do
 
     schema "locations" do
       field(:name, :string)
-      field(:geom, Geo.PostGIS.Geometry)
+      field(:geom, Strabo.Geometry)
     end
   end
 
@@ -21,7 +23,7 @@ defmodule Geo.Ecto.Test do
 
     schema "geographies" do
       field(:name, :string)
-      field(:geom, Geo.PostGIS.Geometry)
+      field(:geom, Strabo.Geometry)
     end
   end
 
@@ -30,12 +32,12 @@ defmodule Geo.Ecto.Test do
 
     schema "location_multi" do
       field(:name, :string)
-      field(:geom, Geo.PostGIS.Geometry)
+      field(:geom, Strabo.Geometry)
     end
   end
 
   setup _ do
-    {:ok, pid} = Postgrex.start_link(Geo.Test.Helper.opts())
+    {:ok, pid} = Postgrex.start_link(Strabo.Test.Helper.opts())
 
     {:ok, _} =
       Postgrex.query(pid, "CREATE EXTENSION IF NOT EXISTS postgis", [])
@@ -70,7 +72,7 @@ defmodule Geo.Ecto.Test do
   end
 
   test "query multipoint" do
-    geom = Geo.WKB.decode!(@multipoint_wkb)
+    geom = @multipoint_wkb |> Base.decode16!() |> Geometry.from_ewkb!()
 
     Repo.insert(%Location{name: "hello", geom: geom})
     query = from(location in Location, limit: 5, select: location)
@@ -80,7 +82,7 @@ defmodule Geo.Ecto.Test do
   end
 
   test "query area" do
-    geom = Geo.WKB.decode!(@multipoint_wkb)
+    geom = @multipoint_wkb |> Base.decode16!() |> Geometry.from_ewkb!()
 
     Repo.insert(%Location{name: "hello", geom: geom})
 
@@ -91,18 +93,18 @@ defmodule Geo.Ecto.Test do
   end
 
   test "query transform" do
-    geom = Geo.WKB.decode!(@multipoint_wkb)
+    geom = @multipoint_wkb |> Base.decode16!() |> Geometry.from_ewkb!()
 
     Repo.insert(%Location{name: "hello", geom: geom})
 
     query = from(location in Location, limit: 1, select: st_transform(location.geom, 3452))
-    results = Repo.one(query)
+    {_geom, srid} = Repo.one(query)
 
-    assert results.srid == 3452
+    assert srid == 3452
   end
 
   test "query distance" do
-    geom = Geo.WKB.decode!(@multipoint_wkb)
+    geom = @multipoint_wkb |> Base.decode16!() |> Geometry.from_ewkb!()
 
     Repo.insert(%Location{name: "hello", geom: geom})
 
@@ -113,7 +115,7 @@ defmodule Geo.Ecto.Test do
   end
 
   test "query sphere distance" do
-    geom = Geo.WKB.decode!(@multipoint_wkb)
+    geom = @multipoint_wkb |> Base.decode16!() |> Geometry.from_ewkb!()
 
     Repo.insert(%Location{name: "hello", geom: geom})
 
@@ -124,22 +126,25 @@ defmodule Geo.Ecto.Test do
   end
 
   test "st_extent" do
-    geom = Geo.WKB.decode!(@multipoint_wkb)
+    geom = @multipoint_wkb |> Base.decode16!() |> Geometry.from_ewkb!()
 
     Repo.insert(%Location{name: "hello", geom: geom})
 
     query = from(location in Location, select: st_extent(location.geom))
-    assert [%Geo.Polygon{coordinates: [coordinates]}] = Repo.all(query)
+    assert [
+      {%Geometry.Polygon{rings: [coordinates]}, nil}
+    ] = Repo.all(query)
     assert length(coordinates) == 5
   end
 
   test "example" do
-    geom = Geo.WKB.decode!(@multipoint_wkb)
+    geom = @multipoint_wkb |> Base.decode16!() |> Geometry.from_ewkb!()
+
     Repo.insert(%Location{name: "hello", geom: geom})
 
     defmodule Example do
       import Ecto.Query
-      import Geo.PostGIS
+      import Strabo
 
       def example_query(geom) do
         from(location in Location, select: st_distance(location.geom, ^geom))
@@ -152,7 +157,7 @@ defmodule Geo.Ecto.Test do
   end
 
   test "geography" do
-    geom = %Geo.Point{coordinates: {30, -90}, srid: 4326}
+    geom = {%Geometry.Point{coordinate: [30, -90]}, 4326}
 
     Repo.insert(%Geographies{name: "hello", geom: geom})
     query = from(location in Geographies, limit: 5, select: location)
@@ -162,7 +167,7 @@ defmodule Geo.Ecto.Test do
   end
 
   test "cast point" do
-    geom = %Geo.Point{coordinates: {30, -90}, srid: 4326}
+    geom = {%Geometry.Point{coordinate: [30, -90]}, 4326}
 
     Repo.insert(%Geographies{name: "hello", geom: geom})
     query = from(location in Geographies, limit: 5, select: location)
@@ -170,17 +175,17 @@ defmodule Geo.Ecto.Test do
 
     result = hd(results)
 
-    json = Geo.JSON.encode(%Geo.Point{coordinates: {31, -90}, srid: 4326})
+    json = Geometry.to_geo_json(%Geometry.Point{coordinate: [31, -90]})
 
     changeset =
       Ecto.Changeset.cast(result, %{title: "Hello", geom: json}, [:name, :geom])
       |> Ecto.Changeset.validate_required([:name, :geom])
 
-    assert changeset.changes == %{geom: %Geo.Point{coordinates: {31, -90}, srid: 4326}}
+    assert changeset.changes == %{geom: %Geometry.Point{coordinate: [31, -90]}}
   end
 
   test "cast point from map" do
-    geom = %Geo.Point{coordinates: {30, -90}, srid: 4326}
+    geom = {%Geometry.Point{coordinate: [30, -90]}, 4326}
 
     Repo.insert(%Geographies{name: "hello", geom: geom})
     query = from(location in Geographies, limit: 5, select: location)
@@ -198,13 +203,13 @@ defmodule Geo.Ecto.Test do
       Ecto.Changeset.cast(result, %{title: "Hello", geom: json}, [:name, :geom])
       |> Ecto.Changeset.validate_required([:name, :geom])
 
-    assert changeset.changes == %{geom: %Geo.Point{coordinates: {31, -90}, srid: 4326}}
+    assert changeset.changes == %{geom: %Geometry.Point{coordinate: [31, -90]}}
   end
 
   test "order by distance" do
-    geom1 = %Geo.Point{coordinates: {30, -90}, srid: 4326}
-    geom2 = %Geo.Point{coordinates: {30, -91}, srid: 4326}
-    geom3 = %Geo.Point{coordinates: {60, -91}, srid: 4326}
+    geom1 = {%Geometry.Point{coordinate: [30, -90]}, 4326}
+    geom2 = {%Geometry.Point{coordinate: [30, -91]}, 4326}
+    geom3 = {%Geometry.Point{coordinate: [60, -91]}, 4326}
 
     Repo.insert(%Geographies{name: "there", geom: geom2})
     Repo.insert(%Geographies{name: "here", geom: geom1})
@@ -224,11 +229,12 @@ defmodule Geo.Ecto.Test do
   end
 
   test "insert multiple geometry types" do
-    geom1 = %Geo.Point{coordinates: {30, -90}, srid: 4326}
-    geom2 = %Geo.LineString{coordinates: [{30, -90}, {30, -91}], srid: 4326}
+    geom1 = {%Geometry.Point{coordinate: [30, -90]}, 4326}
+    geom2 = {%Geometry.LineString{points: [[30, -90], [30, -91]]}, 4326}
 
     Repo.insert(%LocationMulti{name: "hello point", geom: geom1})
     Repo.insert(%LocationMulti{name: "hello line", geom: geom2})
+
     query = from(location in LocationMulti, select: location)
     [m1, m2] = Repo.all(query)
 

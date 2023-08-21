@@ -1,8 +1,8 @@
-defmodule Geo.PostGIS.Test do
+defmodule Strabo.Test do
   use ExUnit.Case, async: true
 
   setup do
-    {:ok, pid} = Postgrex.start_link(Geo.Test.Helper.opts())
+    {:ok, pid} = Postgrex.start_link(Strabo.Test.Helper.opts())
 
     {:ok, _result} =
       Postgrex.query(
@@ -16,19 +16,19 @@ defmodule Geo.PostGIS.Test do
 
   test "insert point", context do
     pid = context[:pid]
-    geo = %Geo.Point{coordinates: {30, -90}, srid: 4326}
+    geom = {%Geometry.Point{coordinate: [30, -90]}, 4326}
 
     {:ok, _} =
       Postgrex.query(pid, "CREATE TABLE point_test (id int, geom geometry(Point, 4326))", [])
 
-    {:ok, _} = Postgrex.query(pid, "INSERT INTO point_test VALUES ($1, $2)", [42, geo])
+    {:ok, _} = Postgrex.query(pid, "INSERT INTO point_test VALUES ($1, $2)", [42, geom])
     {:ok, result} = Postgrex.query(pid, "SELECT * FROM point_test", [])
-    assert(result.rows == [[42, geo]])
+    assert(result.rows == [[42, geom]])
   end
 
   test "insert with text column", context do
     pid = context[:pid]
-    geo = %Geo.Point{coordinates: {30, -90}, srid: 4326}
+    geom = {%Geometry.Point{coordinate: [30, -90]}, 4326}
 
     {:ok, _} =
       Postgrex.query(
@@ -41,28 +41,29 @@ defmodule Geo.PostGIS.Test do
       Postgrex.query(pid, "INSERT INTO text_test (id, t, geom) VALUES ($1, $2, $3)", [
         42,
         "test",
-        geo
+        geom
       ])
 
     {:ok, result} = Postgrex.query(pid, "SELECT id, t, geom FROM text_test", [])
-    assert(result.rows == [[42, "test", geo]])
+    assert(result.rows == [[42, "test", geom]])
   end
 
   test "insert pointz", context do
     pid = context[:pid]
-    geo = %Geo.PointZ{coordinates: {30, -90, 70}, srid: 4326}
+    geom = {%Geometry.PointZ{coordinate: [30, -90, 70]}, 4326}
 
     {:ok, _} =
       Postgrex.query(pid, "CREATE TABLE point_test (id int, geom geometry(PointZ, 4326))", [])
 
-    {:ok, _} = Postgrex.query(pid, "INSERT INTO point_test VALUES ($1, $2)", [42, geo])
+    {:ok, _} = Postgrex.query(pid, "INSERT INTO point_test VALUES ($1, $2)", [42, geom])
     {:ok, result} = Postgrex.query(pid, "SELECT * FROM point_test", [])
-    assert(result.rows == [[42, geo]])
+
+    assert(result.rows == [[42, geom]])
   end
 
   test "insert linestring", context do
     pid = context[:pid]
-    geo = %Geo.LineString{srid: 4326, coordinates: [{30, 10}, {10, 30}, {40, 40}]}
+    geom = {%Geometry.LineString{points: [[1, 2], [3, 4]]}, 4326}
 
     {:ok, _} =
       Postgrex.query(
@@ -71,33 +72,34 @@ defmodule Geo.PostGIS.Test do
         []
       )
 
-    {:ok, _} = Postgrex.query(pid, "INSERT INTO linestring_test VALUES ($1, $2)", [42, geo])
+    {:ok, _} = Postgrex.query(pid, "INSERT INTO linestring_test VALUES ($1, $2)", [42, geom])
     {:ok, result} = Postgrex.query(pid, "SELECT * FROM linestring_test", [])
-    assert(result.rows == [[42, geo]])
+
+    assert(result.rows == [[42, geom]])
   end
 
   test "insert polygon", context do
     pid = context[:pid]
 
-    geo = %Geo.Polygon{
-      coordinates: [
-        [{35, 10}, {45, 45}, {15, 40}, {10, 20}, {35, 10}],
-        [{20, 30}, {35, 35}, {30, 20}, {20, 30}]
-      ],
-      srid: 4326
-    }
+    geom = {%Geometry.Polygon{
+      rings: [
+        [[35, 10], [45, 45], [10, 20], [35, 10]],
+        [[20, 30], [35, 35], [30, 20], [20, 30]]
+      ]
+    }, 4326}
 
     {:ok, _} =
       Postgrex.query(pid, "CREATE TABLE polygon_test (id int, geom geometry(Polygon, 4326))", [])
 
-    {:ok, _} = Postgrex.query(pid, "INSERT INTO polygon_test VALUES ($1, $2)", [42, geo])
+    {:ok, _} = Postgrex.query(pid, "INSERT INTO polygon_test VALUES ($1, $2)", [42, geom])
     {:ok, result} = Postgrex.query(pid, "SELECT * FROM polygon_test", [])
-    assert(result.rows == [[42, geo]])
+
+    assert(result.rows == [[42, geom]])
   end
 
-  test "insert mulitpoint", context do
+  test "insert multipoint", context do
     pid = context[:pid]
-    geo = %Geo.MultiPoint{coordinates: [{0, 0}, {20, 20}, {60, 60}], srid: 4326}
+    geom = {%Geometry.MultiPoint{points: [[0, 0], [20, 20], [60, 60]]}, 4326}
 
     {:ok, _} =
       Postgrex.query(
@@ -106,44 +108,45 @@ defmodule Geo.PostGIS.Test do
         []
       )
 
-    {:ok, _} = Postgrex.query(pid, "INSERT INTO multipoint_test VALUES ($1, $2)", [42, geo])
+    {:ok, _} = Postgrex.query(pid, "INSERT INTO multipoint_test VALUES ($1, $2)", [42, geom])
     {:ok, result} = Postgrex.query(pid, "SELECT * FROM multipoint_test", [])
-    assert(result.rows == [[42, geo]])
+
+    assert(result.rows == [[42, geom]])
   end
 
   test "insert mulitlinestring", context do
     pid = context[:pid]
 
-    geo = %Geo.MultiLineString{
-      coordinates: [[{10, 10}, {20, 20}, {10, 40}], [{40, 40}, {30, 30}, {40, 20}, {30, 10}]],
-      srid: 4326
-    }
+    geom = {%Geometry.MultiLineString{line_strings: [[[1, 2], [5, 6]]]}, 4326}
 
     {:ok, _} =
       Postgrex.query(
         pid,
-        "CREATE TABLE multilinestring_test (id int, geom geometry(MultiLinestring, 4326))",
+        "CREATE TABLE multilinestring_test (id int, geom geometry(MultiLineString, 4326))",
         []
       )
 
-    {:ok, _} = Postgrex.query(pid, "INSERT INTO multilinestring_test VALUES ($1, $2)", [42, geo])
+    {:ok, _} = Postgrex.query(pid, "INSERT INTO multilinestring_test VALUES ($1, $2)", [42, geom])
     {:ok, result} = Postgrex.query(pid, "SELECT * FROM multilinestring_test", [])
-    assert(result.rows == [[42, geo]])
+
+    assert(result.rows == [[42, geom]])
   end
 
-  test "insert mulitpolygon", context do
+  test "insert multipolygon", context do
     pid = context[:pid]
 
-    geo = %Geo.MultiPolygon{
-      coordinates: [
-        [[{40, 40}, {20, 45}, {45, 30}, {40, 40}]],
+    geom = {%Geometry.MultiPolygon{
+      polygons: [
         [
-          [{20, 35}, {10, 30}, {10, 10}, {30, 5}, {45, 20}, {20, 35}],
-          [{30, 20}, {20, 15}, {20, 25}, {30, 20}]
+          [
+            [11, 12],
+            [11, 22],
+            [31, 22],
+            [11, 12]
+          ]
         ]
-      ],
-      srid: 4326
-    }
+      ]
+    }, 4326}
 
     {:ok, _} =
       Postgrex.query(
@@ -152,8 +155,9 @@ defmodule Geo.PostGIS.Test do
         []
       )
 
-    {:ok, _} = Postgrex.query(pid, "INSERT INTO multipolygon_test VALUES ($1, $2)", [42, geo])
+    {:ok, _} = Postgrex.query(pid, "INSERT INTO multipolygon_test VALUES ($1, $2)", [42, geom])
     {:ok, result} = Postgrex.query(pid, "SELECT * FROM multipolygon_test", [])
-    assert(result.rows == [[42, geo]])
+
+    assert(result.rows == [[42, geom]])
   end
 end

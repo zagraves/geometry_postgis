@@ -1,12 +1,14 @@
 {:ok, _} = Application.ensure_all_started(:ecto_sql)
 
-defmodule Geo.Test.Helper do
+defmodule Strabo.Test.Helper do
   def opts do
     [
       hostname: "localhost",
+      port: 5432,
       username: "postgres",
-      database: "geo_postgrex_test",
-      types: Geo.PostGIS.PostgrexTypes
+      database: "postgres",
+      password: "postgres",
+      types: Strabo.PostgrexTypes
     ]
   end
 end

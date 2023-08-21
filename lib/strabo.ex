@@ -1,4 +1,4 @@
-defmodule Geo.PostGIS do
+defmodule Strabo do
   @moduledoc """
   PostGIS functions that can used in ecto queries
   [PostGIS Function Documentation](http://postgis.net/docs/manual-1.3/ch06.html).
@@ -9,7 +9,7 @@ defmodule Geo.PostGIS do
 
       defmodule Example do
         import Ecto.Query
-        import Geo.PostGIS
+        import Strabo
 
         def example_query(geom) do
           from location in Location, limit: 5, select: st_distance(location.geom, ^geom)

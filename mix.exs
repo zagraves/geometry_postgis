@@ -1,12 +1,12 @@
-defmodule GeoPostgis.Mixfile do
+defmodule Strabo.Mixfile do
   use Mix.Project
 
-  @source_url "https://github.com/bryanjos/geo_postgis"
-  @version "3.4.3"
+  @source_url "https://github.com/zagraves/strabo"
+  @version "0.1.0"
 
   def project do
     [
-      app: :geo_postgis,
+      app: :strabo,
       version: @version,
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
@@ -27,20 +27,19 @@ defmodule GeoPostgis.Mixfile do
 
   defp deps do
     [
-      {:geo, "~> 3.5"},
+      {:geometry, "~> 0.4.0"},
       {:postgrex, ">= 0.0.0"},
+      {:jason, "~> 1.2"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:ecto_sql, "~> 3.0", optional: true, only: :test},
-      {:poison, "~> 2.2 or ~> 3.0 or ~> 4.0 or ~> 5.0", optional: true},
-      {:jason, "~> 1.2", optional: true}
+      {:ecto_sql, "~> 3.0", optional: true, only: :test}
     ]
   end
 
   defp package do
     [
-      description: "PostGIS extension for Postgrex.",
+      description: "Geometry/PostGIS extension for Postgrex.",
       files: ["lib", "mix.exs", "README.md", "CHANGELOG.md"],
-      maintainers: ["Bryan Joseph"],
+      maintainers: ["Zach Graves"],
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url}
     ]

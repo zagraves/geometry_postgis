@@ -1,58 +1,36 @@
-# GeoPostGIS
+# Στράβων (Strabo)
 
-[![Build Status](https://travis-ci.org/bryanjos/geo_postgis.svg?branch=master)](https://travis-ci.org/bryanjos/geo_postgis)
-[![Module Version](https://img.shields.io/hexpm/v/geo_postgis.svg)](https://hex.pm/packages/geo_postgis)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/geo_postgis/)
-[![Total Download](https://img.shields.io/hexpm/dt/geo_postgis.svg)](https://hex.pm/packages/geo_postgis)
-[![License](https://img.shields.io/hexpm/l/geo_postgis.svg)](https://github.com/bryanjos/geo_postgis/blob/master/LICENSE)
-[![Last Updated](https://img.shields.io/github/last-commit/bryanjos/geo_postgis.svg)](https://github.com/bryanjos/geo_postgis/commits/master)
-
-Postgrex extension for the PostGIS data types. Uses the [geo](https://github.com/bryanjos/geo) library
+Postgrex extension for the PostGIS data types. Uses the [geometry](https://github.com/hrzndhrn/geometry) library. 
 
 ## Installation
 
-The package can be installed by adding `:geo_postgis` to your list of
-dependencies in `mix.exs`:
+The package can be installed by adding `:strabo` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:geo_postgis, "~> 3.4"}
+    {:strabo, github: "zagraves/strabo"}
   ]
 end
 ```
 
 Make sure PostGIS extension to your database is installed. More information [here](https://trac.osgeo.org/postgis/wiki/UsersWikiPostGIS24UbuntuPGSQL10Apt#Install)
 
-### Optional Configuration
-
-```elixir
-# When a binary is passed to `Geo.PostGIS.Geometry.cast/1` implementation of
-# `Ecto.Type.cast/1`, it is assumed to be a GeoJSON string. When this happens,
-# geo_postgis will use Poison, by default, to convert the binary to a map and
-# then convert that map to one of the Geo structs. If in these cases you would
-# like to use a different JSON parser, you can set the config below.
-
-# config.exs
-config :geo_postgis,
-  json_library: Jason # If you want to set your JSON module
-```
-
 ## Examples
 
 Postgrex Extension for the PostGIS data types, Geometry and Geography:
 
 ```elixir
-Postgrex.Types.define(MyApp.PostgresTypes, [Geo.PostGIS.Extension], [])
+Postgrex.Types.define(MyApp.PostgresTypes, [Strabo.PostGIS.Extension], [])
 
-opts = [hostname: "localhost", username: "postgres", database: "geo_postgrex_test", types: MyApp.PostgresTypes ]
-[hostname: "localhost", username: "postgres", database: "geo_postgrex_test", types: MyApp.PostgresTypes]
+opts = [hostname: "localhost", username: "postgres", database: "strabo_test", types: MyApp.PostgresTypes ]
+[hostname: "localhost", username: "postgres", database: "strabo_test", types: MyApp.PostgresTypes]
 
 {:ok, pid} = Postgrex.Connection.start_link(opts)
 {:ok, #PID<0.115.0>}
 
-geo = %Geo.Point{coordinates: {30, -90}, srid: 4326}
-%Geo.Point{coordinates: {30, -90}, srid: 4326}
+geo = {%Geometry.Point{coordinate: [30, -90]}, 4326}
+{%Geometry.Point{coordinate: [30, -90]}, 4326}
 
 {:ok, _} = Postgrex.Connection.query(pid, "CREATE TABLE point_test (id int, geom geometry(Point, 4326))")
 {:ok, %Postgrex.Result{columns: nil, command: :create_table, num_rows: 0, rows: nil}}
@@ -61,8 +39,7 @@ geo = %Geo.Point{coordinates: {30, -90}, srid: 4326}
 {:ok, %Postgrex.Result{columns: nil, command: :insert, num_rows: 1, rows: nil}}
 
 Postgrex.Connection.query(pid, "SELECT * FROM point_test")
-{:ok, %Postgrex.Result{columns: ["id", "geom"], command: :select, num_rows: 1,
-rows: [{42, %Geo.Point{coordinates: {30.0, -90.0}, srid: 4326 }}]}}
+{:ok, %Postgrex.Result{columns: ["id", "geom"], command: :select, num_rows: 1, rows: [{42, {%Geometry.Point{coordinate: [30.0, -90.0]}, 4326}}]}}
 ```
 
 Use with [Ecto](https://hexdocs.pm/ecto_sql/Ecto.Adapters.Postgres.html#module-extensions):
@@ -70,7 +47,7 @@ Use with [Ecto](https://hexdocs.pm/ecto_sql/Ecto.Adapters.Postgres.html#module-e
 ```elixir
 #If using with Ecto, you may want something like thing instead
 Postgrex.Types.define(MyApp.PostgresTypes,
-              [Geo.PostGIS.Extension] ++ Ecto.Adapters.Postgres.extensions(),
+              [Strabo.Extension] ++ Ecto.Adapters.Postgres.extensions(),
               json: Jason)
 
 #Add extensions to your repo config
@@ -89,7 +66,7 @@ defmodule Test do
 
   schema "test" do
     field :name,           :string
-    field :geom,           Geo.PostGIS.Geometry
+    field :geom,           Strabo.Geometry
   end
 end
 
@@ -151,17 +128,17 @@ defmodule MyApp.Repo.Migrations.EnablePostgis do
 end
 ```
 
-[PostGIS functions](http://postgis.net/docs/manual-1.3/ch06.html) can also be used in Ecto queries. Currently only the OpenGIS functions are implemented. Have a look at [lib/geo_postgis.ex](lib/geo_postgis.ex) for the implemented functions. You can use them like:
+[PostGIS functions](http://postgis.net/docs/manual-1.3/ch06.html) can also be used in Ecto queries. Currently only the OpenGIS functions are implemented. Have a look at [lib/strabo.ex](lib/strabo.ex) for the implemented functions. You can use them like:
 
 ```elixir
 defmodule Example do
   import Ecto.Query
-  import Geo.PostGIS
+  import Strabo
 
   def example_query(geom) do
     query = from location in Location, limit: 5, select: st_distance(location.geom, ^geom)
     query
-    |> Repo.one
+    |> Repo.one()
   end
 end
 ```
@@ -179,6 +156,7 @@ Then you can run the tests as you are used to with `mix test`.
 
 ## Copyright and License
 
+Copyright (c) 2023 Zach Graves
 Copyright (c) 2017 Bryan Joseph
 
-Released under the MIT License, which can be found in the repository in [`LICENSE`](https://github.com/bryanjos/geo_postgis/blob/master/LICENSE).
+Released under the MIT License, which can be found in the repository in [`LICENSE`](https://github.com/zagraves/strabo/blob/master/LICENSE).
