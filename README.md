@@ -52,7 +52,7 @@ Postgrex.Types.define(MyApp.PostgresTypes,
 
 #Add extensions to your repo config
 config :thanks, Repo,
-  database: "geo_postgrex_test",
+  database: "strabo_test",
   username: "postgres",
   password: "postgres",
   hostname: "localhost",

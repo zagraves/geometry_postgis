@@ -14,10 +14,10 @@ defmodule Strabo.Extension do
                     [Strabo.Extension] ++ Ecto.Adapters.Postgres.extensions(),
                     json: Jason)
 
-      opts = [hostname: "localhost", username: "postgres", database: "geo_postgrex_test",
+      opts = [hostname: "localhost", username: "postgres", database: "strabo_test",
       types: MyApp.PostgresTypes ]
 
-      [hostname: "localhost", username: "postgres", database: "geo_postgrex_test",
+      [hostname: "localhost", username: "postgres", database: "strabo_test",
         types: MyApp.PostgresTypes]
 
       {:ok, pid} = Postgrex.Connection.start_link(opts)
