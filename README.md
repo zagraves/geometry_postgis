@@ -21,7 +21,7 @@ Make sure PostGIS extension to your database is installed. More information [her
 Postgrex Extension for the PostGIS data types, Geometry and Geography:
 
 ```elixir
-Postgrex.Types.define(MyApp.PostgresTypes, [Strabo.PostGIS.Extension], [])
+Postgrex.Types.define(MyApp.PostgresTypes, [Strabo.Extension], [])
 
 opts = [hostname: "localhost", username: "postgres", database: "strabo_test", types: MyApp.PostgresTypes ]
 [hostname: "localhost", username: "postgres", database: "strabo_test", types: MyApp.PostgresTypes]
