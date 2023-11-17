@@ -5,6 +5,8 @@ defmodule Strabo.GeoJson do
   def decode!(geojson, :auto),
     do: geojson |> decode!(get_dimensionality(geojson))
 
+  def decode!(_, :error), do: nil
+
   def decode!(geojson, dim),
     do: geojson |> Geometry.from_geo_json!(dim)
 
